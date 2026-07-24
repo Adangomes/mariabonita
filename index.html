@@ -1,1 +1,196 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Moda & PDV Profissional</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sidebar">
+    <h2>MARIA BONITA</h2>
+    <button id="btn-estoque" class="active" onclick="showSection('estoque')">Estoque / Produtos</button>
+    <button id="btn-reservas" onclick="showSection('reservas')">Reservas / Venda Online</button>
+    <button id="btn-pdv" onclick="showSection('pdv')">Frente de Caixa (PDV)</button>
+    <button id="btn-historico" onclick="showSection('historico')">Histórico de Vendas</button>
+</div>
+
+<div class="content">
+    <!-- ESTOQUE -->
+    <div id="estoque" class="section active">
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <span>Total de Peças em Estoque</span>
+                <h4 id="metricTotalPecas">0</h4>
+            </div>
+            <div class="metric-card success">
+                <span>Valor Investido (Estoque)</span>
+                <h4 id="metricValorEstoque">R$ 0,00</h4>
+            </div>
+        </div>
+
+        <h3>Cadastro de Produto</h3>
+        <form id="formProduto" class="form-group">
+            <input type="text" id="sku" placeholder="Código de Barras / SKU" required>
+            <input type="text" id="descricao" placeholder="Descrição da Peça" style="flex:2;" required>
+            <select id="tamanho">
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+                <option value="GG">GG</option>
+                <option value="U">Tamanho Único</option>
+            </select>
+            <input type="text" id="cor" placeholder="Cor / Estampa" required>
+            <input type="number" id="preco" placeholder="Preço (R$)" step="0.01" required>
+            <input type="number" id="quantidade" placeholder="Qtd Estoque" required>
+            <button class="btn btn-primary" type="submit">+ Cadastrar Peça</button>
+        </form>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; flex-wrap: wrap; gap: 10px;">
+            <h3>Consulta & Lista de Produtos</h3>
+            <input type="text" id="searchEstoque" placeholder="Consultar por SKU, Descrição ou Cor..." style="width: 320px;" oninput="renderEstoque()">
+        </div>
+
+        <div class="table-container">
+            <table id="tabelaEstoque">
+                <thead>
+                    <tr><th>SKU</th><th>Descrição</th><th>Tam</th><th>Cor</th><th>Preço</th><th>Qtd</th><th>Status</th><th>Ações</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- RESERVAS -->
+    <div id="reservas" class="section">
+        <h3>Painel de Reservas (Peças de Reserva)</h3>
+        <form id="formReserva" class="form-group">
+            <input type="text" id="reservaSku" placeholder="CÓDIGO DA PEÇA (SKU)" required>
+            <input type="number" id="reservaQtd" value="1" min="1" style="width:80px;" placeholder="Qtd">
+            <select id="reservaTipo">
+                <option value="RETIRADA">RETIRADA</option>
+                <option value="ENTREGA">ENTREGA</option>
+            </select>
+            <input type="text" id="reservaNome" placeholder="Nome do Cliente" style="flex:2;" required>
+            <input type="text" id="reservaSdr" placeholder="SDR (Atendente)" required>
+            <input type="text" id="valorTotalReserva" placeholder="Valor Total" readonly style="width:120px;background:#f3f4f6;">
+            <input type="number" id="valorSinal" placeholder="Sinal (R$)" step="0.01" required style="width:120px;">
+            <select id="formaSinal">
+                <option>PIX</option>
+                <option>Cartão de Crédito</option>
+                <option>Cartão de Débito</option>
+                <option>Dinheiro</option>
+            </select>
+            <button class="btn btn-primary" type="submit">+ Confirmar Reserva</button>
+        </form>
+
+        <h3>Lista de Reservas Ativas</h3>
+        <div class="table-container">
+            <table id="tabelaReservas">
+                <thead>
+                    <tr><th>Data/Hora</th><th>Cliente</th><th>SDR</th><th>Tipo</th><th>Item(ns)</th><th>Total</th><th>Sinal</th><th>Saldo</th><th>Ações</th></tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PDV -->
+    <div id="pdv" class="section">
+        <h3>Frente de Caixa (PDV)</h3>
+        <div class="pdv-grid">
+            <div class="pdv-card">
+                <div class="pdv-search-box">
+                    <input type="text" id="barcodeSearch" placeholder="🔍 Passe o leitor ou digite o SKU / Nome e aperte Enter" autofocus>
+                    <input type="number" id="qtdVenda" value="1" min="1" style="width: 70px;" placeholder="Qtd">
+                    <button class="btn btn-primary" onclick="buscarEAdicionar()">Adicionar</button>
+                </div>
+
+                <div class="shortcut-bar">
+                    <span><kbd>F2</kbd> Buscar Produto</span>
+                    <span><kbd>F4</kbd> Limpar Carrinho</span>
+                    <span><kbd>F8</kbd> Finalizar Venda</span>
+                </div>
+
+                <div class="table-container">
+                    <table id="tabelaCarrinho">
+                        <thead><tr><th>Item</th><th>Qtd</th><th>Preço Un.</th><th>Subtotal</th><th>Ação</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="pdv-card">
+                <h3>Resumo do Pedido</h3>
+                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="width: 100%; font-size: 0.85rem; color: #64748b;">Desconto na Venda:</label>
+                    <input type="number" id="descontoValor" placeholder="0.00" step="0.01" style="flex:1;" oninput="renderCarrinho()">
+                    <select id="descontoTipo" style="width: 80px;" onchange="renderCarrinho()">
+                        <option value="R$">R$</option>
+                        <option value="%">%</option>
+                    </select>
+                </div>
+
+                <div class="checkout-box">
+                    <div class="summary-line"><span>Subtotal:</span><span>R$ <span id="subtotalVenda">0.00</span></span></div>
+                    <div class="summary-line"><span>Desconto:</span><span style="color: #dc2626;">- R$ <span id="descontoCalculado">0.00</span></span></div>
+                    <div class="summary-line summary-total"><span>Total:</span><span style="color: #16a34a;">R$ <span id="totalVenda">0.00</span></span></div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <label style="display:block; margin-bottom: 5px; font-size: 0.85rem; color: #64748b;">Forma de Pagamento:</label>
+                    <select id="pagamento" style="width: 100%; margin-bottom: 15px;">
+                        <option>PIX</option>
+                        <option>Cartão de Crédito</option>
+                        <option>Cartão de Débito</option>
+                        <option>Dinheiro</option>
+                    </select>
+
+                    <button class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="finalizarVenda()">Finalizar Venda (F8)</button>
+                    <button class="btn btn-danger btn-sm" style="width: 100%; margin-top: 10px;" onclick="limparCarrinho()">Cancelar / Limpar Carrinho</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="historico" class="section">
+        <h3>Histórico de Vendas & Relatórios</h3>
+
+        <div class="metrics-grid">
+            <div class="metric-card success">
+                <span>Faturamento (Período Selecionado)</span>
+                <h4 id="metricFaturamento">R$ 0,00</h4>
+            </div>
+            <div class="metric-card">
+                <span>Peças Vendidas no Período</span>
+                <h4 id="metricPecasVendidas">0</h4>
+            </div>
+        </div>
+
+        <div class="form-group" style="align-items: center; background: #fff; padding: 15px; border-radius: 8px;">
+            <label style="font-weight: 600;">Filtrar Vendas Por Mês/Ano:</label>
+            <input type="month" id="filtroMesAno" onchange="renderHistorico()">
+            <button class="btn btn-secondary btn-sm" onclick="limparFiltroData()">Ver Todo o Histórico</button>
+            
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <button class="btn btn-secondary btn-sm" onclick="exportarDados()">💾 Exportar Backup</button>
+                <button class="btn btn-danger btn-sm" onclick="zerarSistema()">🗑️ Zera Dados</button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table id="tabelaHistorico">
+                <thead><tr><th># Pedido</th><th>Data/Hora</th><th>Tipo</th><th>Detalhes / SDR</th><th>Itens Comprados</th><th>Pagamento</th><th>Desconto</th><th>Total</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
 
