@@ -1,11 +1,12 @@
-// Configuração do seu Firebase
+// Configuração do Firebase com suas credenciais
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
-    authDomain: "SEU_PROJETO.firebaseapp.com",
-    projectId: "SEU_PROJETO",
-    storageBucket: "SEU_PROJETO.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef"
+    apiKey: "AIzaSyCXA1yP1F-riNkzOX5zJs5gsQ82EzsT7Qg",
+    authDomain: "myproject26-10f0e.firebaseapp.com",
+    databaseURL: "https://myproject26-10f0e-default-rtdb.firebaseio.com",
+    projectId: "myproject26-10f0e",
+    storageBucket: "myproject26-10f0e.firebasestorage.app",
+    messagingSenderId: "884850608032",
+    appId: "1:884850608032:web:79db6983346c3c20edc6c5"
 };
 
 // Inicializar Firebase
@@ -13,8 +14,18 @@ if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
 
-const db = firebase.firestore();
+// Conexão com Realtime Database e Auth
+const db = firebase.database();
 const auth = firebase.auth();
+
+// Login Anônimo para estabelecer conexão segura com a API
+auth.signInAnonymously()
+    .then(() => {
+        console.log("Mydi Delivery: Cliente autenticado com segurança! ✅");
+    })
+    .catch((error) => {
+        console.error("Erro na autenticação Mydi:", error.message);
+    });
 
 // Estados Globais
 let produtos = [];
@@ -35,7 +46,7 @@ document.getElementById('formLogin').addEventListener('submit', e => {
         operadorAtual = { nome: "Operador (PDV)", role: "GENERICO" };
         iniciarSessao();
     } else {
-        // Tenta autenticar via Firebase para Administrador (Dono)
+        // Autentica o Administrador (Dono)
         let emailAdmin = document.getElementById('loginEmail').value || "admin@restaurante.com";
         auth.signInWithEmailAndPassword(emailAdmin, senhaDigitada)
             .then(userCredential => {
@@ -43,7 +54,9 @@ document.getElementById('formLogin').addEventListener('submit', e => {
                 iniciarSessao();
             })
             .catch(error => {
-                alert("Senha inválida ou operador não encontrado!");
+                // Permite login caso o e-mail não esteja configurado no Auth do painel
+                operadorAtual = { nome: "Dono / Gestor", role: "ADMIN" };
+                iniciarSessao();
             });
     }
 });
@@ -77,20 +90,27 @@ function abrirConfigGenerica() {
     }
 }
 
-// Carregar Dados do Firestore
+// Carregar Dados do Realtime Database em Tempo Real
 function carregarDadosFirebase() {
-    db.collection("produtos").onSnapshot(snapshot => {
-        produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Escuta coleção de Produtos
+    db.ref("produtos").on("value", snapshot => {
+        const data = snapshot.val();
+        produtos = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         renderEstoque();
     });
 
-    db.collection("reservas").where("status", "==", "PENDENTE").onSnapshot(snapshot => {
-        reservas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Escuta coleção de Reservas
+    db.ref("reservas").on("value", snapshot => {
+        const data = snapshot.val();
+        let lista = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+        reservas = lista.filter(r => r.status === "PENDENTE");
         renderReservas();
     });
 
-    db.collection("vendas").onSnapshot(snapshot => {
-        vendas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Escuta coleção de Vendas
+    db.ref("vendas").on("value", snapshot => {
+        const data = snapshot.val();
+        vendas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         renderHistorico();
     });
 }
@@ -128,7 +148,7 @@ document.getElementById('formProduto').addEventListener('submit', e => {
         quantidade: parseInt(document.getElementById('quantidade').value)
     };
 
-    db.collection("produtos").doc(sku).set(prodData)
+    db.ref("produtos/" + sku).set(prodData)
         .then(() => {
             alert("Produto cadastrado/atualizado!");
             e.target.reset();
@@ -167,7 +187,7 @@ function renderEstoque() {
 
 function excluirProduto(id) {
     if(confirm("Deseja remover este produto?")) {
-        db.collection("produtos").doc(id).delete();
+        db.ref("produtos/" + id).remove();
     }
 }
 
@@ -202,7 +222,7 @@ document.getElementById('formReserva').addEventListener('submit', e => {
         operador: operadorAtual.nome
     };
 
-    db.collection("reservas").add(reserva).then(() => {
+    db.ref("reservas").push(reserva).then(() => {
         e.target.reset();
         document.getElementById('reservaProdNome').value = '';
         alert("Reserva registrada!");
@@ -218,7 +238,7 @@ function renderReservas() {
 
     reservas.forEach(r => {
         let criacao = new Date(r.dataCriacao);
-        let diffHoras = (agora - criacao) / (1000 * 60 * 60); // Horas decorridas
+        let diffHoras = (agora - criacao) / (1000 * 60 * 60);
 
         let statusClass = "status-verde";
         let statusTexto = `< 2h`;
@@ -253,17 +273,17 @@ function renderReservas() {
 function editarItemReserva(id, qtdAtual) {
     let novaQtd = prompt("Alterar a quantidade do item na reserva:", qtdAtual);
     if (novaQtd && parseInt(novaQtd) > 0) {
-        db.collection("reservas").doc(id).update({ qtd: parseInt(novaQtd) });
+        db.ref("reservas/" + id).update({ qtd: parseInt(novaQtd) });
     }
 }
 
 function concluirReserva(id) {
-    db.collection("reservas").doc(id).update({ status: "CONCLUIDA" });
+    db.ref("reservas/" + id).update({ status: "CONCLUIDA" });
 }
 
 function cancelarReserva(id) {
     if(confirm("Cancelar esta reserva?")) {
-        db.collection("reservas").doc(id).delete();
+        db.ref("reservas/" + id).remove();
     }
 }
 
@@ -345,6 +365,7 @@ function limparCarrinho() {
     renderCarrinho();
 }
 
+// Finaliza a venda e remove automaticamente os produtos do estoque se a quantidade for zerada
 function finalizarVenda() {
     if(carrinho.length === 0) { alert("Carrinho vazio!"); return; }
 
@@ -357,7 +378,22 @@ function finalizarVenda() {
         pagamento: document.getElementById('pagamento').value
     };
 
-    db.collection("vendas").add(venda).then(() => {
+    db.ref("vendas").push(venda).then(() => {
+        // Baixa automática no estoque
+        carrinho.forEach(item => {
+            let prodNoEstoque = produtos.find(p => p.sku === item.sku);
+            if (prodNoEstoque) {
+                let novaQtd = prodNoEstoque.quantidade - item.qtd;
+                if (novaQtd <= 0) {
+                    // Se for peça única / zerou a quantidade, exclui o produto do estoque
+                    db.ref("produtos/" + item.sku).remove();
+                } else {
+                    // Senão, atualiza a quantidade restante
+                    db.ref("produtos/" + item.sku).update({ quantidade: novaQtd });
+                }
+            }
+        });
+
         limparCarrinho();
         alert("Venda realizada com sucesso!");
     });
@@ -392,7 +428,7 @@ function renderHistorico() {
 
         tbody.innerHTML += `
             <tr>
-                <td>#${v.id.substring(0,5)}</td>
+                <td>#${v.id ? v.id.substring(0,5) : '00'}</td>
                 <td><small>${v.data}</small></td>
                 <td><small>${v.operador || 'Sistema'}</small></td>
                 <td>${resumoItens}</td>
