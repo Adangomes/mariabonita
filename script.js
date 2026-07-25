@@ -14,12 +14,12 @@ import {
 
 // Configurações extraídas do seu projeto "maria"
 const firebaseConfig = {
-    apiKey: "SUA_API_KEY_AQUI",
+    apiKey: "AIzaSyCNGQDQ2LbVcebYwDEOgu7P5sKnGxP-ous",
     authDomain: "maria-7830.firebaseapp.com",
     projectId: "maria-7830",
     storageBucket: "maria-7830.appspot.com",
     messagingSenderId: "965687947792",
-    appId: "SEU_APP_ID_AQUI"
+    appId: "1:965687947792:web:dd462ce0e7bd6c2fb29095"
 };
 
 const app = initializeApp(firebaseConfig);
