@@ -3,50 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERP & PDV Profissional com Firebase</title>
+    <title>ERP Moda & PDV Profissional - Maria Bonita</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- SDKs do Firebase v9 (Compatibilizado via CDN) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-<!-- Tela de Login -->
-<div id="loginOverlay" class="login-modal">
-    <div class="login-box">
-        <h2>Acesso ao Sistema</h2>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">Informe sua senha de operador ou administrador</p>
-        <form id="formLogin">
-            <input type="email" id="loginEmail" placeholder="E-mail (Para Admins)" style="display:none;">
-            <input type="password" id="loginPass" placeholder="Senha do Operador / PIN" required autofocus>
-            <button class="btn btn-primary" type="submit" style="width:100%; margin-top:10px;">Entrar</button>
-        </form>
-    </div>
-</div>
-
 <div class="sidebar">
-    <h2 id="empresaTitle">LOJA / RESTAURANTE</h2>
-    <div id="userBadge" class="user-badge">Operador: <strong id="operadorNome">---</strong></div>
-    <button id="btn-estoque" class="active admin-only" onclick="showSection('estoque')">Estoque / Produtos</button>
-    <button id="btn-reservas" onclick="showSection('reservas')">Reservas / Pedidos</button>
+    <h2>MARIA BONITA</h2>
+    <button id="btn-estoque" class="active" onclick="showSection('estoque')">Estoque / Produtos</button>
+    <button id="btn-reservas" onclick="showSection('reservas')">Reservas / Venda Online</button>
     <button id="btn-pdv" onclick="showSection('pdv')">Frente de Caixa (PDV)</button>
-    <button id="btn-historico" class="admin-only" onclick="showSection('historico')">Histórico de Vendas</button>
-    
-    <div style="margin-top: auto; padding: 10px;">
-        <button id="btn-config" class="btn btn-secondary btn-sm admin-only" style="width:100%; margin-bottom:5px;" onclick="abrirConfigGenerica()">🔑 Criar Senha Genérica</button>
-        <button class="btn btn-danger btn-sm" style="width:100%;" onclick="fazerLogout()">Sair</button>
-    </div>
+    <button id="btn-historico" onclick="showSection('historico')">Histórico de Vendas</button>
 </div>
 
 <div class="content">
-
     <!-- ESTOQUE -->
-    <div id="estoque" class="section active admin-only">
+    <div id="estoque" class="section active">
         <div class="metrics-grid">
             <div class="metric-card">
-                <span>Total de Itens em Estoque</span>
+                <span>Total de Peças em Estoque</span>
                 <h4 id="metricTotalPecas">0</h4>
             </div>
             <div class="metric-card success">
@@ -55,60 +30,70 @@
             </div>
         </div>
 
-        <h3>Cadastro / Alteração de Produto</h3>
+        <h3>Cadastro de Produto</h3>
         <form id="formProduto" class="form-group">
-            <input type="text" id="sku" placeholder="Código de Barras / QR Code" required autofocus>
-            <input type="text" id="descricao" placeholder="Descrição do Produto" style="flex:2;" required>
-            <input type="number" id="preco" placeholder="Preço Normal (R$)" step="0.01" required>
-            <input type="number" id="descontoPadrao" placeholder="Desconto Fixo (R$)" step="0.01" value="0.00">
+            <input type="text" id="sku" placeholder="Código de Barras / SKU" required>
+            <input type="text" id="descricao" placeholder="Descrição da Peça" style="flex:2;" required>
+            <select id="tamanho">
+                <option value="P">P</option>
+                <option value="M">M</option>
+                <option value="G">G</option>
+                <option value="GG">GG</option>
+                <option value="U">Tamanho Único</option>
+            </select>
+            <input type="text" id="cor" placeholder="Cor / Estampa" required>
+            <input type="number" id="preco" placeholder="Preço (R$)" step="0.01" required>
             <input type="number" id="quantidade" placeholder="Qtd Estoque" required>
-            <button class="btn btn-primary" type="submit">+ Salvar Produto</button>
+            <button class="btn btn-primary" type="submit">+ Cadastrar Peça</button>
         </form>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; flex-wrap: wrap; gap: 10px;">
-            <h3>Consulta de Produtos</h3>
-            <input type="text" id="searchEstoque" placeholder="Bipar código de barras ou buscar..." style="width: 320px;" oninput="renderEstoque()">
+            <h3>Consulta & Lista de Produtos</h3>
+            <input type="text" id="searchEstoque" placeholder="Consultar por SKU, Descrição ou Cor..." style="width: 320px;" oninput="renderEstoque()">
         </div>
 
         <div class="table-container">
             <table id="tabelaEstoque">
                 <thead>
-                    <tr><th>Código/SKU</th><th>Descrição</th><th>Preço Orig.</th><th>Desc. Ativo</th><th>Preço Final</th><th>Estoque</th><th>Ações</th></tr>
+                    <tr>
+                        <th>SKU</th><th>Descrição</th><th>Tam</th><th>Cor</th><th>Preço</th><th>Qtd</th><th>Status</th><th>Ações</th>
+                    </tr>
                 </thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
 
-    <!-- RESERVAS / PEDIDOS PENDENTES -->
+    <!-- RESERVAS -->
     <div id="reservas" class="section">
-        <h3>Painel de Reservas & Pedidos Pendentes</h3>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom:15px;">
-            Legenda de Tempo: 
-            <span class="status-pill status-verde">🟢 &lt; 2h (Novo)</span> 
-            <span class="status-pill status-laranja">🟠 2h a 3h (Atenção)</span> 
-            <span class="status-pill status-vermelho">🔴 &gt; 3h (Atrasado)</span>
-        </p>
-
+        <h3>Painel de Reservas (Peças de Reserva)</h3>
         <form id="formReserva" class="form-group">
-            <input type="text" id="reservaSku" placeholder="Bipar Código / QR Code" required onchange="aoBiparReserva()">
-            <input type="text" id="reservaProdNome" placeholder="Produto Lido" readonly style="background:#e2e8f0; flex:2;">
-            <input type="number" id="reservaQtd" value="1" min="1" style="width:70px;">
-            <input type="text" id="reservaNome" placeholder="Nome do Cliente" required>
-            <select id="formaPagamentoReserva">
-                <option value="DINHEIRO">Dinheiro (Destacado)</option>
-                <option value="PIX">PIX</option>
-                <option value="CARTAO">Cartão</option>
-                <option value="PENDENTE">A Pagar no Local</option>
+            <input type="text" id="reservaSku" placeholder="CÓDIGO DA PEÇA (SKU)" required>
+            <input type="number" id="reservaQtd" value="1" min="1" style="width:80px;" placeholder="Qtd">
+            <select id="reservaTipo">
+                <option value="RETIRADA">RETIRADA</option>
+                <option value="ENTREGA">ENTREGA</option>
             </select>
-            <button class="btn btn-primary" type="submit">+ Registrar Reserva</button>
+            <input type="text" id="reservaNome" placeholder="Nome do Cliente" style="flex:2;" required>
+            <input type="text" id="reservaSdr" placeholder="SDR (Atendente)" required>
+            <input type="text" id="valorTotalReserva" placeholder="Valor Total" readonly style="width:120px;background:#f3f4f6;">
+            <input type="number" id="valorSinal" placeholder="Sinal (R$)" step="0.01" required style="width:120px;">
+            <select id="formaSinal">
+                <option>PIX</option>
+                <option>Cartão de Crédito</option>
+                <option>Cartão de Débito</option>
+                <option>Dinheiro</option>
+            </select>
+            <button class="btn btn-primary" type="submit">+ Confirmar Reserva</button>
         </form>
 
         <h3>Lista de Reservas Ativas</h3>
         <div class="table-container">
             <table id="tabelaReservas">
                 <thead>
-                    <tr><th>Tempo / Status</th><th>Cliente</th><th>Item</th><th>Forma Pagto</th><th>Ações / Edição</th></tr>
+                    <tr>
+                        <th>Data/Hora</th><th>Cliente</th><th>SDR</th><th>Tipo</th><th>Item(ns)</th><th>Total</th><th>Sinal/Saldo</th><th>Ações</th>
+                    </tr>
                 </thead>
                 <tbody></tbody>
             </table>
@@ -121,20 +106,22 @@
         <div class="pdv-grid">
             <div class="pdv-card">
                 <div class="pdv-search-box">
-                    <input type="text" id="barcodeSearch" placeholder="🔍 Bipar Código de Barras / QR Code e tecle Enter" autofocus>
-                    <input type="number" id="qtdVenda" value="1" min="1" style="width: 70px;">
+                    <input type="text" id="barcodeSearch" placeholder="🔍 Passe o leitor ou digite o SKU / Nome e aperte Enter">
+                    <input type="number" id="qtdVenda" value="1" min="1" style="width: 70px;" placeholder="Qtd">
                     <button class="btn btn-primary" onclick="buscarEAdicionar()">Adicionar</button>
                 </div>
 
                 <div class="shortcut-bar">
-                    <span><kbd>F2</kbd> Bipar Item</span>
+                    <span><kbd>F2</kbd> Buscar Produto</span>
                     <span><kbd>F4</kbd> Limpar Carrinho</span>
                     <span><kbd>F8</kbd> Finalizar Venda</span>
                 </div>
 
                 <div class="table-container">
                     <table id="tabelaCarrinho">
-                        <thead><tr><th>Item</th><th>Qtd</th><th>Preço Orig.</th><th>Desc.</th><th>Subtotal</th><th>Ação</th></tr></thead>
+                        <thead>
+                            <tr><th>Item</th><th>Qtd</th><th>Preço Un.</th><th>Subtotal</th><th>Ação</th></tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -142,10 +129,18 @@
 
             <div class="pdv-card">
                 <h3>Resumo do Pedido</h3>
-                
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="width: 100%; font-size: 0.85rem; color: #64748b;">Desconto na Venda:</label>
+                    <input type="number" id="descontoValor" placeholder="0.00" step="0.01" style="flex:1;" oninput="renderCarrinho()">
+                    <select id="descontoTipo" style="width: 80px;" onchange="renderCarrinho()">
+                        <option value="R$">R$</option>
+                        <option value="%">%</option>
+                    </select>
+                </div>
+
                 <div class="checkout-box">
                     <div class="summary-line"><span>Subtotal:</span><span>R$ <span id="subtotalVenda">0.00</span></span></div>
-                    <div class="summary-line"><span>Descontos Aplicados:</span><span style="color: #dc2626;">- R$ <span id="descontoCalculado">0.00</span></span></div>
+                    <div class="summary-line"><span>Desconto:</span><span style="color: #dc2626;">- R$ <span id="descontoCalculado">0.00</span></span></div>
                     <div class="summary-line summary-total"><span>Total:</span><span style="color: #16a34a;">R$ <span id="totalVenda">0.00</span></span></div>
                 </div>
 
@@ -159,51 +154,43 @@
                     </select>
 
                     <button class="btn btn-success" style="width: 100%; padding: 15px; font-size: 1.1rem;" onclick="finalizarVenda()">Finalizar Venda (F8)</button>
-                    <button class="btn btn-danger btn-sm" style="width: 100%; margin-top: 10px;" onclick="limparCarrinho()">Cancelar / Limpar</button>
+                    <button class="btn btn-danger btn-sm" style="width: 100%; margin-top: 10px;" onclick="limparCarrinho()">Cancelar / Limpar Carrinho</button>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- HISTÓRICO -->
-    <div id="historico" class="section admin-only">
-        <h3>Histórico de Vendas & Faturamento</h3>
-
+    <div id="historico" class="section">
+        <h3>Histórico de Vendas & Relatórios</h3>
         <div class="metrics-grid">
             <div class="metric-card success">
-                <span>Faturamento no Período</span>
+                <span>Faturamento (Período Selecionado)</span>
                 <h4 id="metricFaturamento">R$ 0,00</h4>
             </div>
             <div class="metric-card">
-                <span>Itens Vendidos</span>
+                <span>Peças Vendidas no Período</span>
                 <h4 id="metricPecasVendidas">0</h4>
             </div>
         </div>
 
         <div class="form-group" style="align-items: center; background: #fff; padding: 15px; border-radius: 8px;">
-            <label style="font-weight: 600;">Filtro de Período:</label>
-            <select id="filtroPeriodo" onchange="renderHistorico()">
-                <option value="hoje">Hoje</option>
-                <option value="7dias">Últimos 7 Dias</option>
-                <option value="mes">Este Mês</option>
-                <option value="ano">Este Ano</option>
-                <option value="todos">Todo o Histórico</option>
-            </select>
-            
-            <div style="margin-left: auto; display: flex; gap: 10px;">
-                <button class="btn btn-secondary btn-sm" onclick="exportarBackup()">💾 Baixar Backup JSON</button>
-            </div>
+            <label style="font-weight: 600;">Filtrar Vendas Por Mês/Ano:</label>
+            <input type="month" id="filtroMesAno" onchange="renderHistorico()">
+            <button class="btn btn-secondary btn-sm" onclick="limparFiltroData()">Ver Todo o Histórico</button>
         </div>
 
         <div class="table-container">
             <table id="tabelaHistorico">
-                <thead><tr><th># Pedido</th><th>Data/Hora</th><th>Operador</th><th>Itens</th><th>Pagamento</th><th>Total</th></tr></thead>
+                <thead>
+                    <tr><th># Pedido</th><th>Data/Hora</th><th>Tipo</th><th>Detalhes / SDR</th><th>Itens Comprados</th><th>Pagamento</th><th>Desconto</th><th>Total</th></tr>
+                </thead>
                 <tbody></tbody>
             </table>
         </div>
     </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
