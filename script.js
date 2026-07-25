@@ -1,181 +1,133 @@
-// Configuração do Firebase com suas credenciais
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+    getFirestore, 
+    collection, 
+    addDoc, 
+    getDocs, 
+    doc, 
+    updateDoc, 
+    deleteDoc, 
+    onSnapshot,
+    query,
+    orderBy 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+// Configurações extraídas do seu projeto "maria"
 const firebaseConfig = {
-    apiKey: "AIzaSyCXA1yP1F-riNkzOX5zJs5gsQ82EzsT7Qg",
-    authDomain: "myproject26-10f0e.firebaseapp.com",
-    databaseURL: "https://myproject26-10f0e-default-rtdb.firebaseio.com",
-    projectId: "myproject26-10f0e",
-    storageBucket: "myproject26-10f0e.firebasestorage.app",
-    messagingSenderId: "884850608032",
-    appId: "1:884850608032:web:79db6983346c3c20edc6c5"
+    apiKey: "SUA_API_KEY_AQUI",
+    authDomain: "maria-7830.firebaseapp.com",
+    projectId: "maria-7830",
+    storageBucket: "maria-7830.appspot.com",
+    messagingSenderId: "965687947792",
+    appId: "SEU_APP_ID_AQUI"
 };
 
-// Inicializar Firebase
-if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-// Conexão com Realtime Database e Auth
-const db = firebase.database();
-const auth = firebase.auth();
+// Referências das Coleções
+const colProdutos = collection(db, "produtos");
+const colVendas = collection(db, "vendas");
+const colReservas = collection(db, "reservas");
 
-// Login Anônimo para estabelecer conexão segura com a API
-auth.signInAnonymously()
-    .then(() => {
-        console.log("Mydi Delivery: Cliente autenticado com segurança! ✅");
-    })
-    .catch((error) => {
-        console.error("Erro na autenticação Mydi:", error.message);
-    });
-
-// Estados Globais
 let produtos = [];
-let reservas = [];
 let vendas = [];
+let reservas = [];
 let carrinho = [];
-let operadorAtual = null; // { nome, role: 'ADMIN' | 'GENERICO' }
 
-// Sistema de Autenticação / Senha Genérica
-document.getElementById('formLogin').addEventListener('submit', e => {
-    e.preventDefault();
-    let senhaDigitada = document.getElementById('loginPass').value.trim();
-
-    // Validação com Senha Genérica Salva
-    let senhaGenericaSalva = localStorage.getItem('senhaGenericaPDV') || "1234";
-
-    if (senhaDigitada === senhaGenericaSalva) {
-        operadorAtual = { nome: "Operador (PDV)", role: "GENERICO" };
-        iniciarSessao();
-    } else {
-        // Autentica o Administrador (Dono)
-        let emailAdmin = document.getElementById('loginEmail').value || "admin@restaurante.com";
-        auth.signInWithEmailAndPassword(emailAdmin, senhaDigitada)
-            .then(userCredential => {
-                operadorAtual = { nome: "Dono / Gestor", role: "ADMIN" };
-                iniciarSessao();
-            })
-            .catch(error => {
-                // Permite login caso o e-mail não esteja configurado no Auth do painel
-                operadorAtual = { nome: "Dono / Gestor", role: "ADMIN" };
-                iniciarSessao();
-            });
-    }
+// =========================
+// ONSNAPSHOT (Realtime DB)
+// =========================
+onSnapshot(colProdutos, (snapshot) => {
+    produtos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderEstoque();
 });
 
-function iniciarSessao() {
-    document.getElementById('loginOverlay').style.display = 'none';
-    document.getElementById('operadorNome').innerText = operadorAtual.nome;
+onSnapshot(colReservas, (snapshot) => {
+    reservas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderReservas();
+});
 
-    if (operadorAtual.role === 'GENERICO') {
-        document.body.classList.add('role-generico');
-        showSection('pdv');
-    } else {
-        document.body.classList.remove('role-generico');
-        showSection('estoque');
-    }
-
-    carregarDadosFirebase();
-    // Atualiza timers das reservas a cada minuto
-    setInterval(renderReservas, 60000);
-}
-
-function fazerLogout() {
-    location.reload();
-}
-
-function abrirConfigGenerica() {
-    let novaSenha = prompt("Defina a nova senha para o ID Genérico de Vendas:", "1234");
-    if(novaSenha) {
-        localStorage.setItem('senhaGenericaPDV', novaSenha);
-        alert("Senha genérica atualizada com sucesso!");
-    }
-}
-
-// Carregar Dados do Realtime Database em Tempo Real
-function carregarDadosFirebase() {
-    // Escuta coleção de Produtos
-    db.ref("produtos").on("value", snapshot => {
-        const data = snapshot.val();
-        produtos = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-        renderEstoque();
-    });
-
-    // Escuta coleção de Reservas
-    db.ref("reservas").on("value", snapshot => {
-        const data = snapshot.val();
-        let lista = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-        reservas = lista.filter(r => r.status === "PENDENTE");
-        renderReservas();
-    });
-
-    // Escuta coleção de Vendas
-    db.ref("vendas").on("value", snapshot => {
-        const data = snapshot.val();
-        vendas = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
-        renderHistorico();
-    });
-}
+onSnapshot(colVendas, (snapshot) => {
+    vendas = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderHistorico();
+});
 
 // Alternar Seções
-function showSection(id) {
-    if (operadorAtual.role === 'GENERICO' && (id === 'estoque' || id === 'historico')) {
-        alert("Acesso restrito ao Administrador.");
+window.showSection = function(id) {
+    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+    document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById(id).classList.add('active');
+    document.getElementById(`btn-${id}`).classList.add('active');
+    
+    if(id === 'estoque') renderEstoque();
+    if(id === 'reservas') renderReservas();
+    if(id === 'pdv') {
+        renderCarrinho();
+        setTimeout(() => document.getElementById('barcodeSearch').focus(), 100);
+    }
+    if(id === 'historico') renderHistorico();
+};
+
+// Cadastrar Produto
+document.getElementById('formProduto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    let skuDigitado = document.getElementById('sku').value.trim();
+    
+    if(produtos.some(p => p.sku === skuDigitado)) {
+        alert('Já existe um produto cadastrado com esse Código/SKU!');
         return;
     }
 
-    document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-    document.querySelectorAll('.sidebar button').forEach(btn => btn.classList.remove('active'));
-
-    document.getElementById(id).classList.add('active');
-    let btn = document.getElementById(`btn-${id}`);
-    if (btn) btn.classList.add('active');
-
-    if (id === 'pdv') setTimeout(() => document.getElementById('barcodeSearch').focus(), 100);
-}
-
-// ESTOQUE: Salvar / Alterar Produto
-document.getElementById('formProduto').addEventListener('submit', e => {
-    e.preventDefault();
-    let sku = document.getElementById('sku').value.trim();
-    let preco = parseFloat(document.getElementById('preco').value);
-    let desconto = parseFloat(document.getElementById('descontoPadrao').value) || 0;
-
-    let prodData = {
-        sku: sku,
+    let produto = {
+        sku: skuDigitado,
         descricao: document.getElementById('descricao').value.trim(),
-        preco: preco,
-        descontoPadrao: desconto,
-        precoComDesconto: preco - desconto,
-        quantidade: parseInt(document.getElementById('quantidade').value)
+        tamanho: document.getElementById('tamanho').value,
+        cor: document.getElementById('cor').value.trim(),
+        preco: parseFloat(document.getElementById('preco').value),
+        quantidade: parseInt(document.getElementById('quantidade').value),
+        dataCadastro: new Date().toISOString()
     };
 
-    db.ref("produtos/" + sku).set(prodData)
-        .then(() => {
-            alert("Produto cadastrado/atualizado!");
-            e.target.reset();
-        });
+    try {
+        await addDoc(colProdutos, produto);
+        e.target.reset();
+        alert('Produto cadastrado com sucesso!');
+    } catch (err) {
+        console.error("Erro ao salvar produto: ", err);
+    }
 });
 
-function renderEstoque() {
+// Renderizar Estoque
+window.renderEstoque = function() {
     let tbody = document.querySelector('#tabelaEstoque tbody');
-    if(!tbody) return;
     tbody.innerHTML = '';
-
+    
+    let termo = document.getElementById('searchEstoque').value.trim().toLowerCase();
     let totalPecas = 0;
     let valorEstoque = 0;
 
-    produtos.forEach(p => {
+    produtos.forEach((p) => {
         totalPecas += p.quantidade;
-        valorEstoque += (p.quantidade * p.precoComDesconto);
+        valorEstoque += (p.quantidade * p.preco);
 
+        if(termo && !p.sku.toLowerCase().includes(termo) && !p.descricao.toLowerCase().includes(termo) && !p.cor.toLowerCase().includes(termo)) {
+            return;
+        }
+
+        let status = p.quantidade <= 3 ? '<span class="badge low-stock">Baixo</span>' : '<span class="badge ok-stock">OK</span>';
         tbody.innerHTML += `
             <tr>
                 <td><strong>${p.sku}</strong></td>
                 <td>${p.descricao}</td>
+                <td>${p.tamanho}</td>
+                <td>${p.cor}</td>
                 <td>R$ ${p.preco.toFixed(2)}</td>
-                <td style="color:#dc2626;">- R$ ${p.descontoPadrao.toFixed(2)}</td>
-                <td><strong>R$ ${p.precoComDesconto.toFixed(2)}</strong></td>
-                <td>${p.quantidade} un</td>
+                <td><strong>${p.quantidade} un</strong></td>
+                <td>${status}</td>
                 <td>
+                    <button class="btn btn-primary btn-sm" onclick="reporEstoque('${p.id}')">+ Repor</button>
                     <button class="btn btn-danger btn-sm" onclick="excluirProduto('${p.id}')">Excluir</button>
                 </td>
             </tr>`;
@@ -183,273 +135,357 @@ function renderEstoque() {
 
     document.getElementById('metricTotalPecas').innerText = totalPecas;
     document.getElementById('metricValorEstoque').innerText = `R$ ${valorEstoque.toFixed(2)}`;
-}
+};
 
-function excluirProduto(id) {
-    if(confirm("Deseja remover este produto?")) {
-        db.ref("produtos/" + id).remove();
+window.reporEstoque = async function(idDoc) {
+    let prod = produtos.find(p => p.id === idDoc);
+    if (!prod) return;
+
+    let qtdAdd = prompt(`Quantas unidades deseja adicionar ao estoque de "${prod.descricao}"?`, "1");
+    let num = parseInt(qtdAdd);
+    if(num && num > 0) {
+        const prodRef = doc(db, "produtos", idDoc);
+        await updateDoc(prodRef, { quantidade: prod.quantidade + num });
     }
-}
+};
 
-// RESERVAS: Bipar produto automático & Estágios de Tempo (1h, 2h, 3h)
-function aoBiparReserva() {
-    let sku = document.getElementById('reservaSku').value.trim();
-    let prod = produtos.find(p => p.sku === sku);
-
-    if (prod) {
-        document.getElementById('reservaProdNome').value = `${prod.descricao} (R$ ${prod.precoComDesconto.toFixed(2)})`;
-    } else {
-        document.getElementById('reservaProdNome').value = "Produto não encontrado!";
+window.excluirProduto = async function(idDoc) {
+    if(confirm('Tem certeza que deseja excluir esta peça do estoque?')) {
+        await deleteDoc(doc(db, "produtos", idDoc));
     }
-}
+};
 
-document.getElementById('formReserva').addEventListener('submit', e => {
+// =========================
+// LÓGICA DE RESERVAS
+// =========================
+document.getElementById('formReserva').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     let sku = document.getElementById('reservaSku').value.trim();
-    let prod = produtos.find(p => p.sku === sku);
+    let qtd = parseInt(document.getElementById('reservaQtd').value) || 1;
+    let tipo = document.getElementById('reservaTipo').value;
+    let nome = document.getElementById('reservaNome').value.trim();
+    let sdr = document.getElementById('reservaSdr').value.trim();
 
-    if(!prod) { alert("Bipe um produto válido!"); return; }
+    let prod = produtos.find(p => p.sku.toLowerCase() === sku.toLowerCase());
 
-    let reserva = {
-        dataCriacao: new Date().toISOString(),
-        cliente: document.getElementById('reservaNome').value.trim(),
-        itemSku: prod.sku,
-        itemDesc: prod.descricao,
-        preco: prod.precoComDesconto,
-        qtd: parseInt(document.getElementById('reservaQtd').value) || 1,
-        formaPagamento: document.getElementById('formaPagamentoReserva').value,
-        status: "PENDENTE",
-        operador: operadorAtual.nome
-    };
+    if(!prod){
+        alert("Código da peça não encontrado.");
+        return;
+    }
 
-    db.ref("reservas").push(reserva).then(() => {
-        e.target.reset();
-        document.getElementById('reservaProdNome').value = '';
-        alert("Reserva registrada!");
-    });
-});
+    if(prod.quantidade < qtd){
+        alert("Estoque insuficiente.");
+        return;
+    }
 
-function renderReservas() {
-    let tbody = document.querySelector('#tabelaReservas tbody');
-    if(!tbody) return;
-    tbody.innerHTML = '';
+    let total = prod.preco * qtd;
+    let sinal = parseFloat(document.getElementById("valorSinal").value);
+
+    if(isNaN(sinal)){
+        alert("Informe o valor do sinal.");
+        return;
+    }
+
+    if(sinal < total * 0.5){
+        alert("O sinal mínimo deve ser 50% do valor da peça.");
+        return;
+    }
+
+    if(sinal > total){
+        alert("O sinal não pode ser maior que o valor da peça.");
+        return;
+    }
+
+    // Atualiza estoque
+    const prodRef = doc(db, "produtos", prod.id);
+    await updateDoc(prodRef, { quantidade: prod.quantidade - qtd });
 
     let agora = new Date();
 
-    reservas.forEach(r => {
-        let criacao = new Date(r.dataCriacao);
-        let diffHoras = (agora - criacao) / (1000 * 60 * 60);
-
-        let statusClass = "status-verde";
-        let statusTexto = `< 2h`;
-
-        if (diffHoras >= 3) {
-            statusClass = "status-vermelho";
-            statusTexto = `3h+ (Atrasado)`;
-        } else if (diffHoras >= 2) {
-            statusClass = "status-laranja";
-            statusTexto = `2h+ (Atenção)`;
-        }
-
-        let tagPagto = r.formaPagamento === 'DINHEIRO' 
-            ? `<span class="tag-dinheiro">💵 DINHEIRO</span>` 
-            : r.formaPagamento;
-
-        tbody.innerHTML += `
-            <tr>
-                <td><span class="status-pill ${statusClass}">${statusTexto}</span></td>
-                <td><strong>${r.cliente}</strong></td>
-                <td>${r.qtd}x ${r.itemDesc}</td>
-                <td>${tagPagto}</td>
-                <td>
-                    <button class="btn btn-primary btn-sm" onclick="editarItemReserva('${r.id}', ${r.qtd})">✏️ Editar Qtd</button>
-                    <button class="btn btn-success btn-sm" onclick="concluirReserva('${r.id}')">✓ Baixa</button>
-                    <button class="btn btn-danger btn-sm" onclick="cancelarReserva('${r.id}')">✕</button>
-                </td>
-            </tr>`;
+    await addDoc(colReservas, {
+        dataHora: agora.toLocaleString("pt-BR"),
+        cliente: nome,
+        sdr: sdr,
+        tipo: tipo,
+        itemSku: prod.sku,
+        itemDesc: prod.descricao,
+        tamanho: prod.tamanho,
+        qtd: qtd,
+        precoUn: prod.preco,
+        total: total,
+        sinal: sinal,
+        restante: total - sinal,
+        formaSinal: document.getElementById("formaSinal").value,
+        status: "PENDENTE"
     });
-}
 
-function editarItemReserva(id, qtdAtual) {
-    let novaQtd = prompt("Alterar a quantidade do item na reserva:", qtdAtual);
-    if (novaQtd && parseInt(novaQtd) > 0) {
-        db.ref("reservas/" + id).update({ qtd: parseInt(novaQtd) });
+    e.target.reset();
+    document.getElementById("reservaQtd").value = 1;
+    alert("Reserva criada com sucesso.");
+});
+
+window.renderReservas = function(){
+    let tbody = document.querySelector("#tabelaReservas tbody");
+    tbody.innerHTML = "";
+
+    reservas.filter(r => r.status === "PENDENTE").forEach(r => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${r.dataHora}</td>
+            <td>${r.cliente}</td>
+            <td>${r.sdr}</td>
+            <td><span class="badge online-tag">${r.tipo}</span></td>
+            <td>${r.qtd}x ${r.itemDesc}</td>
+            <td>R$ ${r.total.toFixed(2)}</td>
+            <td>
+                <strong>Sinal:</strong> R$ ${r.sinal.toFixed(2)}<br>
+                <strong>Saldo:</strong> R$ ${r.restante.toFixed(2)}
+            </td>
+            <td>
+                <button class="btn btn-success btn-sm" onclick="concluirVendaReserva('${r.id}')">Concluir Venda</button>
+                <button class="btn btn-danger btn-sm" onclick="cancelarReserva('${r.id}')">Cancelar</button>
+            </td>
+        </tr>`;
+    });
+};
+
+window.concluirVendaReserva = async function(idReserva){
+    let r = reservas.find(x => x.id === idReserva);
+    if(!r) return;
+
+    let pagamentoFinal;
+    let detalhesPagamento;
+
+    if(r.restante <= 0){
+        pagamentoFinal = "Pago Integral (" + r.formaSinal + ")";
+        detalhesPagamento = `SDR: ${r.sdr}\nCliente: ${r.cliente}\nSinal: R$ ${r.sinal.toFixed(2)} (${r.formaSinal})\nPagamento Integral na Reserva`;
+    } else {
+        pagamentoFinal = prompt(`Saldo restante: R$ ${r.restante.toFixed(2)}\nInforme a forma de pagamento:\nPIX\nCartão de Crédito\nCartão de Débito\nDinheiro`, "PIX");
+        if(!pagamentoFinal) return;
+
+        detalhesPagamento = `SDR: ${r.sdr}\nCliente: ${r.cliente}\nSinal: R$ ${r.sinal.toFixed(2)} (${r.formaSinal})\nRestante: R$ ${r.restante.toFixed(2)} (${pagamentoFinal})`;
     }
-}
 
-function concluirReserva(id) {
-    db.ref("reservas/" + id).update({ status: "CONCLUIDA" });
-}
+    await addDoc(colVendas, {
+        pedidoNum: vendas.length + 1,
+        dataIso: new Date().toISOString(),
+        data: new Date().toLocaleString("pt-BR"),
+        tipoVenda: "VENDA ONLINE",
+        detalhes: detalhesPagamento,
+        itens: `${r.qtd}x ${r.itemDesc} (${r.tamanho})`,
+        totalPecas: r.qtd,
+        pagamento: r.restante <= 0 ? "Integral (" + r.formaSinal + ")" : `${r.formaSinal} + ${pagamentoFinal}`,
+        desconto: "R$ 0.00",
+        total: r.total
+    });
 
-function cancelarReserva(id) {
-    if(confirm("Cancelar esta reserva?")) {
-        db.ref("reservas/" + id).remove();
+    await updateDoc(doc(db, "reservas", idReserva), { status: "CONCLUIDA" });
+    alert("Venda concluída com sucesso.");
+};
+
+window.cancelarReserva = async function(idReserva){
+    if(!confirm("Deseja cancelar esta reserva?")) return;
+
+    let r = reservas.find(x => x.id === idReserva);
+    if(!r) return;
+
+    let prod = produtos.find(p => p.sku === r.itemSku);
+    if(prod){
+        await updateDoc(doc(db, "produtos", prod.id), { quantidade: prod.quantidade + r.qtd });
     }
-}
 
-// PDV: Bipar e Aplicar Desconto em Tempo Real
+    await updateDoc(doc(db, "reservas", idReserva), { status: "CANCELADA" });
+    alert("Reserva cancelada.");
+};
+
+// =========================
+// LÓGICA DO PDV
+// =========================
 document.getElementById('barcodeSearch').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') buscarEAdicionar();
 });
 
-function buscarEAdicionar() {
+window.buscarEAdicionar = function() {
     let input = document.getElementById('barcodeSearch');
-    let sku = input.value.trim();
+    let termo = input.value.trim().toLowerCase();
     let qtd = parseInt(document.getElementById('qtdVenda').value) || 1;
 
-    let prod = produtos.find(p => p.sku === sku || p.descricao.toLowerCase().includes(sku.toLowerCase()));
+    if(!termo) return;
+
+    let prod = produtos.find(p => p.sku.toLowerCase() === termo || p.descricao.toLowerCase().includes(termo));
 
     if(!prod) {
-        alert("Produto não encontrado!");
+        alert('Produto não encontrado!');
         input.select();
         return;
     }
 
-    let itemNoCarrinho = carrinho.find(c => c.sku === prod.sku);
+    let itemNoCarrinho = carrinho.find(c => c.produto.id === prod.id);
+    let qtdTotalNoCarrinho = (itemNoCarrinho ? itemNoCarrinho.qtd : 0) + qtd;
 
-    if (itemNoCarrinho) {
+    if(qtdTotalNoCarrinho > prod.quantidade) {
+        alert(`Estoque insuficiente! Saldo atual no estoque: ${prod.quantidade}`);
+        return;
+    }
+
+    if(itemNoCarrinho) {
         itemNoCarrinho.qtd += qtd;
     } else {
-        carrinho.push({
-            sku: prod.sku,
-            descricao: prod.descricao,
-            precoOriginal: prod.preco,
-            desconto: prod.descontoPadrao,
-            precoFinal: prod.precoComDesconto,
-            qtd: qtd
-        });
+        carrinho.push({ produto: prod, qtd });
     }
 
     input.value = '';
     document.getElementById('qtdVenda').value = 1;
     input.focus();
     renderCarrinho();
-}
+};
 
-function renderCarrinho() {
+window.renderCarrinho = function() {
     let tbody = document.querySelector('#tabelaCarrinho tbody');
     tbody.innerHTML = '';
     let subtotal = 0;
-    let totalDescontos = 0;
 
-    carrinho.forEach((item, index) => {
-        let itemSubtotal = item.qtd * item.precoFinal;
-        subtotal += (item.qtd * item.precoOriginal);
-        totalDescontos += (item.qtd * item.desconto);
+    carrinho.forEach((item, cIndex) => {
+        let itemSubtotal = item.qtd * item.produto.preco;
+        subtotal += itemSubtotal;
 
         tbody.innerHTML += `
             <tr>
-                <td>${item.descricao}</td>
-                <td>${item.qtd}</td>
-                <td>R$ ${item.precoOriginal.toFixed(2)}</td>
-                <td style="color:#dc2626;">- R$ ${(item.qtd * item.desconto).toFixed(2)}</td>
+                <td>${item.produto.descricao} (${item.produto.tamanho}/${item.produto.cor})</td>
+                <td>
+                    <button class="btn btn-sm" onclick="alterarQtdCarrinho(${cIndex}, -1)">-</button>
+                    ${item.qtd}
+                    <button class="btn btn-sm" onclick="alterarQtdCarrinho(${cIndex}, 1)">+</button>
+                </td>
+                <td>R$ ${item.produto.preco.toFixed(2)}</td>
                 <td>R$ ${itemSubtotal.toFixed(2)}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="removerDoCarrinho(${index})">✕</button></td>
+                <td><button class="btn btn-danger btn-sm" onclick="removerDoCarrinho(${cIndex})">✕</button></td>
             </tr>`;
     });
 
-    let totalFinal = subtotal - totalDescontos;
+    let descValorInput = parseFloat(document.getElementById('descontoValor').value) || 0;
+    let descTipo = document.getElementById('descontoTipo').value;
+    let descontoFinal = descTipo === 'R$' ? descValorInput : (subtotal * descValorInput) / 100;
+
+    if(descontoFinal > subtotal) descontoFinal = subtotal;
+
+    let totalFinal = subtotal - descontoFinal;
 
     document.getElementById('subtotalVenda').innerText = subtotal.toFixed(2);
-    document.getElementById('descontoCalculado').innerText = totalDescontos.toFixed(2);
+    document.getElementById('descontoCalculado').innerText = descontoFinal.toFixed(2);
     document.getElementById('totalVenda').innerText = totalFinal.toFixed(2);
-}
+};
 
-function removerDoCarrinho(index) {
-    carrinho.splice(index, 1);
+window.alterarQtdCarrinho = function(cIndex, delta) {
+    let item = carrinho[cIndex];
+    let novaQtd = item.qtd + delta;
+
+    if(novaQtd <= 0) { removerDoCarrinho(cIndex); return; }
+    
+    let prodOriginal = produtos.find(p => p.id === item.produto.id);
+    if(novaQtd > prodOriginal.quantidade) { alert('Limite de estoque atingido!'); return; }
+
+    item.qtd = novaQtd;
     renderCarrinho();
-}
+};
 
-function limparCarrinho() {
+window.removerDoCarrinho = function(cIndex) {
+    carrinho.splice(cIndex, 1);
+    renderCarrinho();
+};
+
+window.limparCarrinho = function() {
     carrinho = [];
+    document.getElementById('descontoValor').value = '';
     renderCarrinho();
-}
+};
 
-// Finaliza a venda e remove automaticamente os produtos do estoque se a quantidade for zerada
-function finalizarVenda() {
-    if(carrinho.length === 0) { alert("Carrinho vazio!"); return; }
+window.finalizarVenda = async function() {
+    if(carrinho.length === 0) { alert('O carrinho está vazio!'); return; }
 
-    let venda = {
+    let total = parseFloat(document.getElementById('totalVenda').innerText);
+    let descontoDesc = document.getElementById('descontoCalculado').innerText;
+    let formaPagamento = document.getElementById('pagamento').value;
+    let totalPecasVenda = carrinho.reduce((acc, i) => acc + i.qtd, 0);
+    let itensStr = carrinho.map(i => `${i.qtd}x ${i.produto.descricao} (${i.produto.tamanho})`).join(', ');
+
+    // Abater estoque no Firestore
+    for (let item of carrinho) {
+        let prodOriginal = produtos.find(p => p.id === item.produto.id);
+        if(prodOriginal) {
+            await updateDoc(doc(db, "produtos", item.produto.id), {
+                quantidade: prodOriginal.quantidade - item.qtd
+            });
+        }
+    }
+
+    await addDoc(colVendas, {
+        pedidoNum: vendas.length + 1,
         dataIso: new Date().toISOString(),
-        data: new Date().toLocaleString("pt-BR"),
-        operador: operadorAtual.nome,
-        itens: carrinho,
-        total: parseFloat(document.getElementById('totalVenda').innerText),
-        pagamento: document.getElementById('pagamento').value
-    };
-
-    db.ref("vendas").push(venda).then(() => {
-        // Baixa automática no estoque
-        carrinho.forEach(item => {
-            let prodNoEstoque = produtos.find(p => p.sku === item.sku);
-            if (prodNoEstoque) {
-                let novaQtd = prodNoEstoque.quantidade - item.qtd;
-                if (novaQtd <= 0) {
-                    // Se for peça única / zerou a quantidade, exclui o produto do estoque
-                    db.ref("produtos/" + item.sku).remove();
-                } else {
-                    // Senão, atualiza a quantidade restante
-                    db.ref("produtos/" + item.sku).update({ quantidade: novaQtd });
-                }
-            }
-        });
-
-        limparCarrinho();
-        alert("Venda realizada com sucesso!");
+        data: new Date().toLocaleString('pt-BR'),
+        tipoVenda: 'LOJA FÍSICA',
+        detalhes: 'Balcão',
+        itens: itensStr,
+        totalPecas: totalPecasVenda,
+        pagamento: formaPagamento,
+        desconto: `R$ ${descontoDesc}`,
+        total
     });
-}
 
-// HISTÓRICO: Filtros (Hoje, 7 dias, Mês, Ano)
-function renderHistorico() {
+    limparCarrinho();
+    alert('Venda realizada com sucesso!');
+    showSection('pdv');
+};
+
+// =========================
+// HISTÓRICO E FILTROS
+// =========================
+window.renderHistorico = function() {
     let tbody = document.querySelector('#tabelaHistorico tbody');
-    if(!tbody) return;
     tbody.innerHTML = '';
-
-    let filtro = document.getElementById('filtroPeriodo').value;
-    let agora = new Date();
+    
+    let filtroMesAno = document.getElementById('filtroMesAno').value;
     let faturamento = 0;
     let pecasVendidas = 0;
 
     let vendasFiltradas = vendas.filter(v => {
-        let dataVenda = new Date(v.dataIso);
-        if (filtro === 'hoje') return dataVenda.toDateString() === agora.toDateString();
-        if (filtro === '7dias') return (agora - dataVenda) / (1000 * 60 * 60 * 24) <= 7;
-        if (filtro === 'mes') return dataVenda.getMonth() === agora.getMonth() && dataVenda.getFullYear() === agora.getFullYear();
-        if (filtro === 'ano') return dataVenda.getFullYear() === agora.getFullYear();
-        return true;
+        if(!filtroMesAno) return true;
+        let dataVenda = v.dataIso ? v.dataIso.substring(0, 7) : "";
+        return dataVenda === filtroMesAno;
     });
 
-    vendasFiltradas.reverse().forEach(v => {
+    vendasFiltradas.slice().reverse().forEach((v, index) => {
         faturamento += v.total;
-        let qtdItens = v.itens ? v.itens.reduce((acc, i) => acc + i.qtd, 0) : 1;
-        pecasVendidas += qtdItens;
+        pecasVendidas += (v.totalPecas || 1);
 
-        let resumoItens = v.itens ? v.itens.map(i => `${i.qtd}x ${i.descricao}`).join(', ') : 'Venda Geral';
+        let badgeTipo = v.tipoVenda === 'VENDA ONLINE' 
+            ? '<span class="badge online-tag">VENDA ONLINE</span>' 
+            : '<span class="badge balcao-tag">LOJA FÍSICA</span>';
 
         tbody.innerHTML += `
             <tr>
-                <td>#${v.id ? v.id.substring(0,5) : '00'}</td>
+                <td><strong>#${v.pedidoNum || index + 1}</strong></td>
                 <td><small>${v.data}</small></td>
-                <td><small>${v.operador || 'Sistema'}</small></td>
-                <td>${resumoItens}</td>
+                <td>${badgeTipo}</td>
+                <td><small>${v.detalhes || 'Balcão'}</small></td>
+                <td>${v.itens}</td>
                 <td>${v.pagamento}</td>
+                <td style="color:#dc2626;">-${v.desconto || 'R$ 0.00'}</td>
                 <td><strong>R$ ${v.total.toFixed(2)}</strong></td>
             </tr>`;
     });
 
     document.getElementById('metricFaturamento').innerText = `R$ ${faturamento.toFixed(2)}`;
     document.getElementById('metricPecasVendidas').innerText = pecasVendidas;
-}
+};
 
-function exportarBackup() {
-    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ produtos, vendas, reservas }));
-    let dl = document.createElement('a');
-    dl.setAttribute("href", dataStr);
-    dl.setAttribute("download", `backup_sistema_${new Date().toISOString().slice(0,10)}.json`);
-    dl.click();
-}
+window.limparFiltroData = function() {
+    document.getElementById('filtroMesAno').value = '';
+    renderHistorico();
+};
 
-// Atalhos do Teclado
+// Atalhos do PDV
 document.addEventListener('keydown', e => {
     if(!document.getElementById('pdv').classList.contains('active')) return;
     if(e.key === 'F2') { e.preventDefault(); document.getElementById('barcodeSearch').focus(); }
