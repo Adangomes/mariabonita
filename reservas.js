@@ -1,6 +1,7 @@
- import { db, colReservas } from "./firebase.js";
-import { addDoc, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { db, colReservas } from "./firebase.js";
+import { addDoc, doc, updateDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { operadorAtual } from "./auth.js";
+import { imprimirReserva } from "./imprimir.js";
 
 let reservasLocal = [];
 let produtosLocal = [];
@@ -68,7 +69,12 @@ export function initReservas() {
         e.target.reset();
         document.getElementById("reservaQtd").value = 1;
         document.getElementById("reservaSdr").value = operadorAtual;
-        alert("Reserva registrada!");
+
+        // Pergunta da Impressão da Reserva (Sacola)
+        let querImprimir = confirm("Reserva registrada com sucesso! 🎉\n\nDeseja imprimir o comprovante da sacola?");
+        if(querImprimir) {
+            imprimirReservaViaObjeto(novaReserva);
+        }
     });
 
     window.renderReservas = function(){
@@ -136,12 +142,37 @@ export function initReservas() {
                     Sinal: R$ ${(r.sinal || 0).toFixed(2)}
                 </td>
                 <td>
-                    <button class="btn btn-success btn-sm" onclick="concluirVendaReserva('${r.id}')">Concluir Venda</button>
+                    <button class="btn btn-primary btn-sm" style="margin-bottom: 3px;" onclick="acaoImprimirReserva('${r.id}')">Imprimir</button>
+                    <button class="btn btn-success btn-sm" onclick="concluirVendaReserva('${r.id}')">Concluir</button>
                     <button class="btn btn-danger btn-sm" onclick="cancelarReserva('${r.id}')">Cancelar</button>
                 </td>
             </tr>`;
         });
     };
+
+    // Função aux para formatar e disparar a impressão
+    window.acaoImprimirReserva = function(idReserva) {
+        let r = reservasLocal.find(x => x.id === idReserva);
+        if(!r) return;
+        imprimirReservaViaObjeto(r);
+    };
+
+    function imprimirReservaViaObjeto(reservaObj) {
+        let itensFormatados = reservaObj.itens.map(i => ({
+            codigo: i.sku,
+            nome: i.desc,
+            cor: i.tamanho,
+            preco: i.totalItem
+        }));
+
+        imprimirReserva({
+            cliente: reservaObj.cliente,
+            observacao: `Origem: ${reservaObj.origem} | SDR: ${reservaObj.sdr}`,
+            desconto: reservaObj.sinal || 0,
+            total: reservaObj.totalGeral,
+            itens: itensFormatados
+        });
+    }
 
     window.adicionarItemReserva = async function(idReserva) {
         let r = reservasLocal.find(x => x.id === idReserva);
@@ -222,7 +253,11 @@ export function initReservas() {
         });
 
         await updateDoc(doc(db, "reservas", idReserva), { status: "CONCLUIDA" });
-        alert("Reserva concluída e convertida em venda!");
+        
+        let querImprimir = confirm("Reserva concluída com sucesso! Deseja imprimir a via da sacola?");
+        if(querImprimir) {
+            imprimirReservaViaObjeto(r);
+        }
     };
 
     window.cancelarReserva = async function(idReserva){
