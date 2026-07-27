@@ -1,4 +1,4 @@
- import { auth } from "./firebase.js";
+import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const EMAILS_PERMITIDOS = {
@@ -10,43 +10,64 @@ const EMAILS_PERMITIDOS = {
 export let operadorAtual = "";
 
 export function initAuth(onSuccess) {
-    document.getElementById('formLogin').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim().toLowerCase();
-        const senha = document.getElementById('loginSenha').value;
-        const errDiv = document.getElementById('loginError');
-        errDiv.innerText = "";
+    const formLogin = document.getElementById('formLogin');
+    
+    if (formLogin) {
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const emailInput = document.getElementById('loginEmail').value.trim().toLowerCase();
+            const senha = document.getElementById('loginSenha').value;
+            const errDiv = document.getElementById('loginError');
+            
+            if (errDiv) errDiv.innerText = "";
 
-        if (!EMAILS_PERMITIDOS[email]) {
-            errDiv.innerText = "E-mail não possui permissão de acesso ao sistema.";
-            return;
-        }
+            // Verifica permissão no objeto local
+            if (!EMAILS_PERMITIDOS[emailInput]) {
+                if (errDiv) errDiv.innerText = "E-mail não possui permissão de acesso ao sistema.";
+                alert("Acesso negado: E-mail não cadastrado na lista de permissões.");
+                return;
+            }
 
-        try {
-            await signInWithEmailAndPassword(auth, email, senha);
-        } catch (err) {
-            errDiv.innerText = "Erro na autenticação: " + err.message;
-        }
-    });
+            try {
+                await signInWithEmailAndPassword(auth, emailInput, senha);
+            } catch (err) {
+                console.error("Erro Firebase:", err);
+                if (errDiv) errDiv.innerText = "Erro na autenticação: " + err.message;
+                alert("Erro ao entrar: " + err.message);
+            }
+        });
+    }
 
     onAuthStateChanged(auth, (user) => {
-        if (user && EMAILS_PERMITIDOS[user.email.toLowerCase()]) {
+        if (user && user.email && EMAILS_PERMITIDOS[user.email.toLowerCase()]) {
             operadorAtual = EMAILS_PERMITIDOS[user.email.toLowerCase()];
-            document.getElementById('nomeOperador').innerText = operadorAtual;
-            document.getElementById('login-overlay').style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-            if (document.getElementById('reservaSdr')) {
-                document.getElementById('reservaSdr').value = operadorAtual;
-            }
-            if(onSuccess) onSuccess();
+            
+            const elOperador = document.getElementById('nomeOperador');
+            if (elOperador) elOperador.innerText = operadorAtual;
+            
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) overlay.style.display = 'none';
+            
+            const app = document.getElementById('app');
+            if (app) app.style.display = 'flex';
+            
+            const reservaSdr = document.getElementById('reservaSdr');
+            if (reservaSdr) reservaSdr.value = operadorAtual;
+            
+            if (onSuccess) onSuccess();
         } else {
             if (user) signOut(auth);
-            document.getElementById('login-overlay').style.display = 'flex';
-            document.getElementById('app').style.display = 'none';
+            
+            const overlay = document.getElementById('login-overlay');
+            if (overlay) overlay.style.display = 'flex';
+            
+            const app = document.getElementById('app');
+            if (app) app.style.display = 'none';
         }
     });
 }
 
-export window.fazerLogout = function() {
+// Forma correta de expor a função para o HTML
+window.fazerLogout = function() {
     signOut(auth);
 };
