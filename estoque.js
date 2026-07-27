@@ -61,7 +61,7 @@ export function initEstoque(colProdutos) {
                     <td>${p.cor}</td>
                     <td>
                         R$ ${p.preco.toFixed(2)} 
-                        <button class="btn btn-secondary btn-sm" onclick="alterarPrecoEstoque('${p.sku}')">✏️ Edit</button>
+                        <button class="btn btn-secondary btn-sm" onclick="alterarPrecoEstoque('${p.sku}')">Edit</button>
                     </td>
                     <td><strong>${p.quantidade} un</strong></td>
                     <td>${status}</td>
