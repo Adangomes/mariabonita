@@ -71,8 +71,7 @@ export function initReservas() {
         document.getElementById("reservaSdr").value = operadorAtual;
 
         // Pergunta da Impressão da Reserva (Sacola)
-        let querImprimir = confirm("Reserva registrada com sucesso! 
-            \n\nDeseja imprimir o comprovante da sacola?");
+        let querImprimir = confirm("Reserva registrada com sucesso!\n\nDeseja imprimir o comprovante da sacola?");
         if(querImprimir) {
             imprimirReservaViaObjeto(novaReserva);
         }
@@ -143,15 +142,17 @@ export function initReservas() {
                     Sinal: R$ ${(r.sinal || 0).toFixed(2)}
                 </td>
                 <td>
-                    <button class="btn btn-primary btn-sm" style="margin-bottom: 3px;" onclick="acaoImprimirReserva('${r.id}')">Imprimir</button>
-                    <button class="btn btn-success btn-sm" onclick="concluirVendaReserva('${r.id}')">Concluir</button>
-                    <button class="btn btn-danger btn-sm" onclick="cancelarReserva('${r.id}')">Cancelar</button>
+                    <div style="display: flex; flex-direction: column; gap: 4px; min-width: 90px;">
+                        <button class="btn btn-secondary btn-sm" onclick="concluirVendaReserva('${r.id}')">Concluir</button>
+                        <button class="btn btn-secondary btn-sm" onclick="cancelarReserva('${r.id}')">Cancelar</button>
+                        <button class="btn btn-secondary btn-sm" onclick="acaoImprimirReserva('${r.id}')">Imprimir</button>
+                    </div>
                 </td>
             </tr>`;
         });
     };
 
-    // Função aux para formatar e disparar a impressão
+    // Função auxiliar para formatar e disparar a impressão
     window.acaoImprimirReserva = function(idReserva) {
         let r = reservasLocal.find(x => x.id === idReserva);
         if(!r) return;
