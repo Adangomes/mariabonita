@@ -1,5 +1,6 @@
- import { db, colVendas } from "./firebase.js";
+import { db, colVendas } from "./firebase.js";
 import { addDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { imprimirCupomVenda } from "./imprimir.js";
 
 let carrinho = [];
 let produtosLocal = [];
@@ -61,7 +62,7 @@ export function initPdv() {
 
             tbody.innerHTML += `
                 <tr>
-                    <td>${item.produto.descricao} (${item.produto.tamanho}/${item.produto.cor})</td>
+                    <td>${item.produto.descricao} (${item.produto.tamanho}/${item.produto.cor || ''})</td>
                     <td>
                         <button class="btn btn-sm" onclick="alterarQtdCarrinho(${cIndex}, -1)">-</button>
                         ${item.qtd}
@@ -108,17 +109,31 @@ export function initPdv() {
         carrinho = [];
         document.getElementById('descontoValor').value = '';
         renderCarrinho();
+        document.getElementById('barcodeSearch').focus();
     };
 
     window.finalizarVenda = async function() {
         if(carrinho.length === 0) { alert('O carrinho está vazio!'); return; }
 
+        let subtotal = carrinho.reduce((acc, i) => acc + (i.qtd * i.produto.preco), 0);
         let total = parseFloat(document.getElementById('totalVenda').innerText);
-        let descontoDesc = document.getElementById('descontoCalculado').innerText;
+        let descontoVal = parseFloat(document.getElementById('descontoCalculado').innerText) || 0;
         let formaPagamento = document.getElementById('pagamento').value;
         let totalPecasVenda = carrinho.reduce((acc, i) => acc + i.qtd, 0);
         let itensStr = carrinho.map(i => `${i.qtd}x ${i.produto.descricao} (${i.produto.tamanho})`).join(', ');
 
+        // Mapeia os itens formatados para o cupom de 58mm
+        let itensParaImpressao = carrinho.map(i => ({
+            codigo: i.produto.sku || '-',
+            nome: i.produto.descricao,
+            cor: i.produto.cor || i.produto.tamanho,
+            qtd: i.qtd,
+            preco: i.produto.preco
+        }));
+
+        let numeroPedido = vendasLocal.length + 1;
+
+        // 1. Atualiza estoque no Firestore
         for (let item of carrinho) {
             let prodOriginal = produtosLocal.find(p => p.id === item.produto.id);
             if(prodOriginal) {
@@ -128,8 +143,9 @@ export function initPdv() {
             }
         }
 
+        // 2. Registra a venda no Firestore
         await addDoc(colVendas, {
-            pedidoNum: vendasLocal.length + 1,
+            pedidoNum: numeroPedido,
             dataIso: new Date().toISOString(),
             data: new Date().toLocaleString('pt-BR'),
             tipoVenda: 'LOJA FÍSICA',
@@ -137,12 +153,26 @@ export function initPdv() {
             itens: itensStr,
             totalPecas: totalPecasVenda,
             pagamento: formaPagamento,
-            desconto: `R$ ${descontoDesc}`,
+            desconto: `R$ ${descontoVal.toFixed(2)}`,
             total
         });
 
+        // 3. Pergunta se deseja imprimir o cupom
+        let querImprimir = confirm('Venda realizada com sucesso! 🎉\n\nDeseja imprimir o cupom da venda?');
+
+        if(querImprimir) {
+            imprimirCupomVenda({
+                id: numeroPedido,
+                subtotal: subtotal,
+                desconto: descontoVal,
+                total: total,
+                formaPagamento: formaPagamento,
+                itens: itensParaImpressao
+            });
+        }
+
+        // 4. Limpa o caixa e foca para a próxima venda
         limparCarrinho();
-        alert('Venda realizada com sucesso!');
     };
 
     document.addEventListener('keydown', e => {
