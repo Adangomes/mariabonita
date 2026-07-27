@@ -5,13 +5,23 @@
 import { operadorAtual } from "./auth.js";
 
 const CSS_IMPRESSAO = `
+  /* Oculta o container de impressão da tela normal do sistema */
+  #area-impressao {
+    display: none;
+  }
+
   @media print {
+    /* Esconde todo o conteúdo do sistema na hora de imprimir */
     body * {
       visibility: hidden;
     }
+    
+    /* Exibe e posiciona apenas a área do cupom */
     #area-impressao, #area-impressao * {
       visibility: visible;
+      display: block !important;
     }
+    
     #area-impressao {
       position: absolute;
       left: 0;
@@ -25,6 +35,7 @@ const CSS_IMPRESSAO = `
       box-sizing: border-box;
     }
   }
+
   .cupom-container {
     width: 100%;
     max-width: 54mm;
