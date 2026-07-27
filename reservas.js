@@ -71,7 +71,8 @@ export function initReservas() {
         document.getElementById("reservaSdr").value = operadorAtual;
 
         // Pergunta da Impressão da Reserva (Sacola)
-        let querImprimir = confirm("Reserva registrada com sucesso! 🎉\n\nDeseja imprimir o comprovante da sacola?");
+        let querImprimir = confirm("Reserva registrada com sucesso! 
+            \n\nDeseja imprimir o comprovante da sacola?");
         if(querImprimir) {
             imprimirReservaViaObjeto(novaReserva);
         }
