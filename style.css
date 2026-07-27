@@ -12,6 +12,31 @@ body {
     color: #333; 
 }
 
+/* Login Overlay */
+.login-overlay {
+    position: fixed;
+    top:0; left:0; width:100vw; height:100vh;
+    background: #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.login-card {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    width: 320px;
+    text-align: center;
+}
+
+.login-card h2 { margin-bottom: 5px; color: #1e293b; }
+.login-card p { margin-bottom: 20px; font-size: 0.85rem; color: #64748b; }
+.login-card input { width: 100%; margin-bottom: 12px; }
+.login-error { color: #dc2626; font-size: 0.85rem; margin-top: 10px; font-weight: bold; }
+
 /* Sidebar */
 .sidebar { 
     width: 220px; 
@@ -24,10 +49,18 @@ body {
 
 .sidebar h2 { 
     text-align: center; 
-    padding: 20px; 
+    padding: 20px 10px 5px 10px; 
     font-size: 1.2rem; 
     background: #0f172a; 
-    border-bottom: 1px solid #334155; 
+}
+
+.user-info {
+    text-align: center;
+    padding-bottom: 15px;
+    background: #0f172a;
+    font-size: 0.8rem;
+    color: #38bdf8;
+    border-bottom: 1px solid #334155;
 }
 
 .sidebar button { 
@@ -186,6 +219,12 @@ th {
 .ok-stock { background: #22c55e; }
 .online-tag { background: #8b5cf6; }
 .balcao-tag { background: #0284c7; }
+
+/* CORES DAS RESERVAS */
+.reserva-pago { background-color: #dcfce7 !important; }          /* Verde */
+.reserva-laranja { background-color: #ffedd5 !important; }       /* Laranja */
+.reserva-vermelho { background-color: #fee2e2 !important; }      /* Vermelho */
+.reserva-marrom { background-color: #f5e6d3 !important; }        /* Marrom suave */
 
 /* PDV Layout */
 .pdv-grid { 
