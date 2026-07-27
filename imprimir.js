@@ -173,7 +173,7 @@ export function imprimirReserva(reserva) {
       </div>
 
       <div class="cupom-footer">
-        --- VIA DA SACOLA ---
+        --------------------
       </div>
     </div>
   `;
