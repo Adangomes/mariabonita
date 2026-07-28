@@ -207,6 +207,8 @@ th {
     letter-spacing: 0.05em; 
 }
 
+
+/* DAQUI PARA BAIXO É DO BLOCO DE CORES DE PRODUTOS RESERVADOS*/
 .badge { 
     padding: 4px 8px; 
     border-radius: 12px; 
@@ -216,15 +218,19 @@ th {
 }
 
 .low-stock { background: #ef4444; }
-.ok-stock { background: #22c55e; }
-.online-tag { background: #8b5cf6; }
+
+/* TAGS DE ORIGEM NEUTRAS (WhatsApp e Instagram discretos) */
+.ok-stock { background: #475569 !important; color: #fff !important; }     /* WhatsApp Neutro */
+.online-tag { background: #64748b !important; color: #fff !important; }   /* Instagram Neutro */
 .balcao-tag { background: #0284c7; }
 
-/* CORES DAS RESERVAS */
-.reserva-pago { background-color: # !important; }          /* Verde */
-.reserva-laranja { background-color: #ffedd5 !important; }       /* Laranja */
-.reserva-vermelho { background-color: #ff0000 !important; }      /* Vermelho */
-.reserva-marrom { background-color: #D97706 !important; }        /* Marrom suave */
+/* CORES DAS RESERVAS (Bem vivas e com texto legível) */
+.reserva-pago { background-color: #22c55e !important; color: #ffffff !important; }      /* Verde Vivo */
+.reserva-laranja { background-color: #f97316 !important; color: #ffffff !important; }   /* Laranja Vivo */
+.reserva-vermelho { background-color: #ef4444 !important; color: #ffffff !important; }  /* Vermelho Vivo */
+.reserva-marrom { background-color: #D97706 !important; color: #ffffff !important; }    /* Marrom Vivo */
+
+/* VAI ATE AQUI O BLOCO DE CORES DE PRODUTOS RESERVADOS*/
 
 /* PDV Layout */
 .pdv-grid { 
