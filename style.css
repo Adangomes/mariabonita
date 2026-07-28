@@ -224,7 +224,7 @@ th {
 .online-tag { background: #94a3b8 !important; color: #fff !important; }   /* Instagram Neutro */
 .balcao-tag { background: #0284c7; }
 
-/* BARRAS LATERAIS (Ligeiramente mais largas - 8px e Vermelho do Botão Sair) */
+/* BARRAS LATERAIS */
 .reserva-pago { 
     background-color: #ffffff !important; 
     border-left: 8px solid #22c55e !important; /* Verde */
@@ -237,13 +237,26 @@ th {
 
 .reserva-vermelho { 
     background-color: #ffffff !important; 
-    border-left: 8px solid #be123c !important; /* Vermelho idêntico ao botão Sair */
+    border-left: 8px solid #be123c !important; /* Vermelho do Botão Sair */
 }
 
 .reserva-marrom { 
     background-color: #ffffff !important; 
     border-left: 8px solid #D97706 !important; /* Marrom */
 }
+
+/* BOTÃO X (OVERRIDE NO .btn-danger PARA FICAR NEUTRO) */
+.btn-danger { 
+    background: #e2e8f0 !important; 
+    color: #475569 !important; 
+    border: none !important;
+}
+
+.btn-danger:hover { 
+    background: #cbd5e1 !important; 
+    color: #0f172a !important; 
+}
+
 
 /* BOTÃO X (REMOVER PEÇA) NEUTRO E DISCRETO */
 .btn-remover-item {
