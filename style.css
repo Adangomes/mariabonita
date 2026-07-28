@@ -216,28 +216,52 @@ th {
     font-size: 0.75rem; 
     font-weight: bold; 
 }
+
 .low-stock { background: #ef4444; }
+
 /* TAGS DE ORIGEM NEUTRAS */
 .ok-stock { background: #64748b !important; color: #fff !important; }     /* WhatsApp Neutro */
 .online-tag { background: #94a3b8 !important; color: #fff !important; }   /* Instagram Neutro */
 .balcao-tag { background: #0284c7; }
 
-/* BORDA LATERAL NAS RESERVAS (Fundo Branco + Borda Colorida na Esquerda) */
+/* BARRAS LATERAIS (Ligeiramente mais largas - 8px e Vermelho do Botão Sair) */
 .reserva-pago { 
     background-color: #ffffff !important; 
-    border-left: 6px solid #22c55e !important; /* Verde */
+    border-left: 8px solid #22c55e !important; /* Verde */
 }
+
 .reserva-laranja { 
     background-color: #ffffff !important; 
-    border-left: 6px solid #f97316 !important; /* Laranja */
+    border-left: 8px solid #f97316 !important; /* Laranja */
 }
+
 .reserva-vermelho { 
     background-color: #ffffff !important; 
-    border-left: 6px solid #ef4444 !important; /* Vermelho */
+    border-left: 8px solid #be123c !important; /* Vermelho idêntico ao botão Sair */
 }
+
 .reserva-marrom { 
     background-color: #ffffff !important; 
-    border-left: 6px solid #D97706 !important; /* Marrom / Âmbar */
+    border-left: 8px solid #D97706 !important; /* Marrom */
+}
+
+/* BOTÃO X (REMOVER PEÇA) NEUTRO E DISCRETO */
+.btn-remover-item {
+    background: #e2e8f0 !important;
+    color: #475569 !important;
+    border: none !important;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 6px;
+    transition: 0.2s;
+}
+
+.btn-remover-item:hover {
+    background: #cbd5e1 !important;
+    color: #0f172a !important;
 }
 
 /* VAI ATE AQUI O BLOCO DE CORES DE PRODUTOS RESERVADOS*/
