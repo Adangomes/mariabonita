@@ -221,9 +221,9 @@ th {
 .balcao-tag { background: #0284c7; }
 
 /* CORES DAS RESERVAS */
-.reserva-pago { background-color: #dcfce7 !important; }          /* Verde */
+.reserva-pago { background-color: # !important; }          /* Verde */
 .reserva-laranja { background-color: #ffedd5 !important; }       /* Laranja */
-.reserva-vermelho { background-color: #fee2e2 !important; }      /* Vermelho */
+.reserva-vermelho { background-color: #ff0000 !important; }      /* Vermelho */
 .reserva-marrom { background-color: #f5e6d3 !important; }        /* Marrom suave */
 
 /* PDV Layout */
