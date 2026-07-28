@@ -216,9 +216,7 @@ th {
     font-size: 0.75rem; 
     font-weight: bold; 
 }
-
 .low-stock { background: #ef4444; }
-
 /* TAGS DE ORIGEM NEUTRAS */
 .ok-stock { background: #64748b !important; color: #fff !important; }     /* WhatsApp Neutro */
 .online-tag { background: #94a3b8 !important; color: #fff !important; }   /* Instagram Neutro */
@@ -229,22 +227,18 @@ th {
     background-color: #ffffff !important; 
     border-left: 6px solid #22c55e !important; /* Verde */
 }
-
 .reserva-laranja { 
     background-color: #ffffff !important; 
     border-left: 6px solid #f97316 !important; /* Laranja */
 }
-
 .reserva-vermelho { 
     background-color: #ffffff !important; 
     border-left: 6px solid #ef4444 !important; /* Vermelho */
 }
-
 .reserva-marrom { 
     background-color: #ffffff !important; 
     border-left: 6px solid #D97706 !important; /* Marrom / Âmbar */
 }
-
 
 /* VAI ATE AQUI O BLOCO DE CORES DE PRODUTOS RESERVADOS*/
 
