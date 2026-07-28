@@ -219,16 +219,32 @@ th {
 
 .low-stock { background: #ef4444; }
 
-/* TAGS DE ORIGEM NEUTRAS (WhatsApp e Instagram discretos) */
+/* TAGS DE ORIGEM NEUTRAS */
 .ok-stock { background: #64748b !important; color: #fff !important; }     /* WhatsApp Neutro */
 .online-tag { background: #94a3b8 !important; color: #fff !important; }   /* Instagram Neutro */
 .balcao-tag { background: #0284c7; }
 
-/* CORES DAS RESERVAS (Tons pastéis visíveis e agradáveis sem "gritar" na tela) */
-.reserva-pago { background-color: #dcfce7 !important; color: #15803d !important; }      /* Verde Suave */
-.reserva-laranja { background-color: #ffedd5 !important; color: #c2410c !important; }   /* Laranja Suave */
-.reserva-vermelho { background-color: #fee2e2 !important; color: #b91c1c !important; }  /* Vermelho Suave */
-.reserva-marrom { background-color: #fef3c7 !important; color: #92400e !important; }    /* Marrom/Âmbar Suave */
+/* BORDA LATERAL NAS RESERVAS (Fundo Branco + Borda Colorida na Esquerda) */
+.reserva-pago { 
+    background-color: #ffffff !important; 
+    border-left: 6px solid #22c55e !important; /* Verde */
+}
+
+.reserva-laranja { 
+    background-color: #ffffff !important; 
+    border-left: 6px solid #f97316 !important; /* Laranja */
+}
+
+.reserva-vermelho { 
+    background-color: #ffffff !important; 
+    border-left: 6px solid #ef4444 !important; /* Vermelho */
+}
+
+.reserva-marrom { 
+    background-color: #ffffff !important; 
+    border-left: 6px solid #D97706 !important; /* Marrom / Âmbar */
+}
+
 
 /* VAI ATE AQUI O BLOCO DE CORES DE PRODUTOS RESERVADOS*/
 
