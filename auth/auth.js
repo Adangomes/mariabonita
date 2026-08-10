@@ -1,5 +1,5 @@
 // auth.js
-import { auth } from "./firebase.js";
+import { auth } from "../firebase.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { obterNomePorEmail, setOperadorAtual, operadorAtual } from "./users.js";
 import { exibirErroLogin, atualizarInterfaceUsuarioLogado, atualizarInterfaceUsuarioDeslogado } from "./uiAuth.js";
