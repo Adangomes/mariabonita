@@ -1,8 +1,10 @@
- import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+// firebase.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
     getFirestore, 
-    collection 
+    collection, 
+    enableIndexedDbPersistence 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -18,6 +20,20 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
+// ATIVAR PERSISTÊNCIA OFFLINE (Sincroniza com o Electron / Navegador)
+enableIndexedDbPersistence(db)
+    .then(() => {
+        console.log("💾 Persistência offline do Firestore ativada com sucesso!");
+    })
+    .catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn("Múltiplas abas abertas. A persistência offline funciona apenas em uma aba de cada vez.");
+        } else if (err.code === 'unimplemented') {
+            console.warn("O ambiente atual não suporta suporte offline do IndexedDB.");
+        }
+    });
+
+// Coleções exportadas para o sistema
 export const colProdutos = collection(db, "produtos");
 export const colVendas = collection(db, "vendas");
 export const colReservas = collection(db, "reservas");
