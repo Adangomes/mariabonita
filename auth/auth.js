@@ -1,30 +1,26 @@
+// auth.js
 import { auth } from "./firebase.js";
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { obterNomePorEmail, setOperadorAtual, operadorAtual } from "./users.js";
+import { exibirErroLogin, atualizarInterfaceUsuarioLogado, atualizarInterfaceUsuarioDeslogado } from "./uiAuth.js";
 
-const EMAILS_PERMITIDOS = {
-    "ferraza865@gmail.com": "Anderson",
-    "adangones55@gmail.com": "TI",
-    "mariabonita7830@gmail.com": "Maria Bonita"
-};
-
-export let operadorAtual = "";
+export { operadorAtual };
 
 export function initAuth(onSuccess) {
     const formLogin = document.getElementById('formLogin');
-    
+
     if (formLogin) {
         formLogin.addEventListener('submit', async (e) => {
             e.preventDefault();
             const emailInput = document.getElementById('loginEmail').value.trim().toLowerCase();
             const senha = document.getElementById('loginSenha').value;
-            const errDiv = document.getElementById('loginError');
-            
-            if (errDiv) errDiv.innerText = "";
 
-            // Verifica permissão no objeto local
-            if (!EMAILS_PERMITIDOS[emailInput]) {
-                if (errDiv) errDiv.innerText = "E-mail não possui permissão de acesso ao sistema.";
-                alert("Acesso negado: E-mail não cadastrado na lista de permissões.");
+            exibirErroLogin(""); // Limpa erros anteriores
+
+            // Valida permissão prévia
+            const nomeOperador = obterNomePorEmail(emailInput);
+            if (!nomeOperador) {
+                exibirErroLogin("Acesso negado: E-mail não cadastrado na lista de permissões.");
                 return;
             }
 
@@ -32,43 +28,28 @@ export function initAuth(onSuccess) {
                 await signInWithEmailAndPassword(auth, emailInput, senha);
             } catch (err) {
                 console.error("Erro Firebase:", err);
-                if (errDiv) errDiv.innerText = "Erro na autenticação: " + err.message;
-                alert("Erro ao entrar: " + err.message);
+                exibirErroLogin("Erro na autenticação: " + err.message);
             }
         });
     }
 
+    // Monitora estado do login
     onAuthStateChanged(auth, (user) => {
-        if (user && user.email && EMAILS_PERMITIDOS[user.email.toLowerCase()]) {
-            operadorAtual = EMAILS_PERMITIDOS[user.email.toLowerCase()];
-            
-            const elOperador = document.getElementById('nomeOperador');
-            if (elOperador) elOperador.innerText = operadorAtual;
-            
-            const overlay = document.getElementById('login-overlay');
-            if (overlay) overlay.style.display = 'none';
-            
-            const app = document.getElementById('app');
-            if (app) app.style.display = 'flex';
-            
-            const reservaSdr = document.getElementById('reservaSdr');
-            if (reservaSdr) reservaSdr.value = operadorAtual;
-            
+        const email = user?.email?.toLowerCase();
+        const nomeOperador = email ? obterNomePorEmail(email) : null;
+
+        if (user && nomeOperador) {
+            setOperadorAtual(nomeOperador);
+            atualizarInterfaceUsuarioLogado(nomeOperador);
             if (onSuccess) onSuccess();
         } else {
-            if (user) signOut(auth);
-            
-            const overlay = document.getElementById('login-overlay');
-            if (overlay) overlay.style.display = 'flex';
-            
-            const app = document.getElementById('app');
-            if (app) app.style.display = 'none';
+            if (user) signOut(auth); // Desloga se não tiver permissão
+            atualizarInterfaceUsuarioDeslogado();
         }
     });
 }
 
-// Forma correta de expor a função para o HTML
+// Expõe logout global para eventos do HTML (ex: onclick="fazerLogout()")
 window.fazerLogout = function() {
     signOut(auth);
 };
-
